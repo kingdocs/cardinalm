@@ -1,3 +1,12 @@
+> [!NOTE]
+> **This is a personal fork of [cardisoft/cardinal](https://github.com/cardisoft/cardinal).**
+> Everything below is upstream documentation. This fork adds on top of upstream master:
+>
+> - **Name-based ignore rules** — a new multi-line field in Preferences (below "Ignore paths") accepting gitignore-style patterns, one per line: `*.log`, `.DS_Store`, `~$*` for files; a trailing `/` restricts a rule to directories, so `.*/` prunes all dot-directories and `node_modules/` prunes dependency folders anywhere in the tree. Matching files (or directory subtrees) never enter the name or content index, not just the visible results. File rules never match directories, and directory rules never match files. Matching is ASCII case-insensitive.
+> - **Close-to-quit** — closing the main window exits the app instead of hiding it to the background.
+>
+> Implementation notes: the matcher is a self-contained, zero-dependency Rust module (`fswalk/src/ignore_file.rs`); rules are persisted with a digest so editing them invalidates the cache deterministically; the cache format version is offset from upstream to avoid collisions. This fork tracks upstream and rebases on it, keeping changes minimal and contained.
+
 <div align="center">
   <img src="cardinal/mac-icon_1024x1024.png" alt="Cardinal icon" width="120" height="120">
   <h1>Cardinal</h1>
