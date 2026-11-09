@@ -1,3 +1,14 @@
+> [!NOTE]
+> **這是 [cardisoft/cardinal](https://github.com/cardisoft/cardinal) 的個人衍生版（CardinalM）。**
+> 以下為上游原文。本衍生版在上游 master 基礎上增加了：
+>
+> - **依名稱忽略規則**——「偏好設定」中新增「忽略規則」多行輸入框（位於「忽略路徑」下方），每行一條 .gitignore 風格規則：`*.log`、`.DS_Store`、`~$*` 用於檔案；規則以 `/` 結尾表示只匹配目錄，例如 `.*/` 剪掉所有點開頭的目錄，`node_modules/` 剪掉任意層級的依賴目錄。命中的檔案或目錄子樹不會進入「檔名索引」與「內容索引」，而不只是從搜尋結果中隱藏。檔案規則絕不匹配目錄，目錄規則也絕不匹配檔案；匹配不分大小寫（ASCII）。
+> - **關窗即結束**——關閉主視窗時結束應用程式，而不是像上游那樣隱藏到背景。
+>
+> 實作說明：匹配器是獨立、零依賴的 Rust 模組（`fswalk/src/ignore_file.rs`）；規則以指紋形式寫入快取，因此只有規則真正變化才會觸發重建；快取格式版本號與上游錯開以免衝突。本衍生版長期跟隨上游 rebase，改動盡量小而集中。
+>
+> **下載編譯好的版本（Apple Silicon）**：[Releases 頁面](https://github.com/kingdocs/cardinalm/releases)
+
 <div align="center">
   <img src="../../cardinal/mac-icon_1024x1024.png" alt="Cardinal icon" width="120" height="120">
   <h1>Cardinal</h1>
