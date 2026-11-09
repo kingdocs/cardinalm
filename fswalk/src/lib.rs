@@ -1,6 +1,20 @@
 use rayon::{iter::ParallelBridge, prelude::ParallelIterator};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+
+mod ignore_file;
+pub use ignore_file::FileNameRules;
+
+use std::sync::{Arc, LazyLock};
+
+/// 空规则集单例：避免每个 `WalkData::new` 都分配一次。
+static EMPTY_FILE_NAME_RULES: LazyLock<Arc<FileNameRules>> =
+    LazyLock::new(|| Arc::new(FileNameRules::default()));
+
+fn empty_file_name_rules() -> Arc<FileNameRules> {
+    Arc::clone(&EMPTY_FILE_NAME_RULES)
+}
+
 use std::{
     fs::{self, Metadata},
     io::{Error, ErrorKind},
@@ -124,6 +138,8 @@ pub struct WalkData<'w, F: Fn() -> bool> {
     pub ignore_directories: &'w [PathBuf],
     /// Paths to include even when they fall under an ignored directory.
     pub include_paths: &'w [PathBuf],
+    /// 全局忽略文件类型：按文件名匹配，只作用于文件，不影响目录。
+    file_name_rules: Arc<FileNameRules>,
     /// If set, metadata will be collected for each file node(folder node will get free metadata).
     need_metadata: bool,
 }
@@ -146,7 +162,7 @@ where
 }
 
 impl<'w> WalkData<'w, fn() -> bool> {
-    pub const fn simple(root_path: &'w Path, need_metadata: bool) -> Self {
+    pub fn simple(root_path: &'w Path, need_metadata: bool) -> Self {
         fn never_cancel() -> bool {
             false
         }
@@ -158,6 +174,7 @@ impl<'w> WalkData<'w, fn() -> bool> {
             root_path,
             ignore_directories: &[],
             include_paths: &[],
+            file_name_rules: empty_file_name_rules(),
             need_metadata,
         }
     }
@@ -178,12 +195,46 @@ impl<'w, F: Fn() -> bool> WalkData<'w, F> {
             root_path,
             ignore_directories,
             include_paths,
+            file_name_rules: empty_file_name_rules(),
             need_metadata,
         }
     }
 
+    /// 挂载"忽略文件类型"规则。默认空规则对现有调用方零影响，
+    /// 因此所有既有 `WalkData::new` 调用点无需改动。
+    pub fn with_file_name_rules(mut self, rules: Arc<FileNameRules>) -> Self {
+        self.file_name_rules = rules;
+        self
+    }
+
+    pub fn file_name_rules(&self) -> &Arc<FileNameRules> {
+        &self.file_name_rules
+    }
+
     fn should_ignore(&self, path: &Path) -> bool {
         should_ignore_path(path, self.ignore_directories, self.include_paths)
+    }
+
+    /// entry 级判断：路径规则 + 文件名规则。
+    ///
+    /// 文件名规则分两套桶，各管一类，互不串门：
+    /// - 文件查 `is_ignored_file`（`*.log`、`.DS_Store` 这类不带尾斜杠的规则）；
+    /// - 目录查 `is_ignored_dir`（只含带尾斜杠的规则，如 `.*/`、`node_modules/`）。
+    ///
+    /// 因此「忽略文件类型不影响文件夹索引」依然成立：写了 `*.log` 不会剪掉名叫
+    /// `debug.log` 的文件夹。只有显式写成 `xxx/` 才会剪目录，且是连内容一起剪。
+    fn should_ignore_entry(&self, path: &Path, is_dir: bool) -> bool {
+        if self.should_ignore(path) {
+            return true;
+        }
+        let Some(name) = path.file_name() else {
+            return false;
+        };
+        if is_dir {
+            self.file_name_rules.is_ignored_dir(name)
+        } else {
+            self.file_name_rules.is_ignored_file(name)
+        }
     }
 
     fn is_cancelled(&self) -> bool {
@@ -263,11 +314,13 @@ fn walk<F: Fn() -> bool + Send + Sync>(path: &Path, walk_data: &WalkData<'_, F>)
                                     return None;
                                 }
                                 let path = entry.path();
-                                if walk_data.should_ignore(&path) {
-                                    return None;
-                                }
                                 // doesn't traverse symlink
                                 if let Ok(data) = entry.file_type() {
+                                    // 先拿到类型再判定：文件名规则必须知道是文件还是目录，
+                                    // 否则名为 debug.log 的目录会被整棵剪掉。
+                                    if walk_data.should_ignore_entry(&path, data.is_dir()) {
+                                        return None;
+                                    }
                                     if data.is_dir() {
                                         walk(&path, walk_data)
                                     } else {
@@ -580,6 +633,36 @@ mod tests {
         assert!(wd.should_ignore(Path::new("/x/y/z")));
         assert!(!wd.should_ignore(Path::new("/x")));
         assert!(!wd.should_ignore(Path::new("/b")));
+    }
+
+    #[test]
+    fn file_name_rules_apply_to_files_only() {
+        let rules = Arc::new(FileNameRules::from_lines(["*.log", ".DS_Store"]));
+        let wd = WalkData::new(Path::new("/"), &[], &[], false, || false)
+            .with_file_name_rules(Arc::clone(&rules));
+        assert!(wd.should_ignore_entry(Path::new("/a/debug.log"), false));
+        // 同名目录不应被文件名规则排除——这是「不影响文件夹索引」的硬约束。
+        assert!(!wd.should_ignore_entry(Path::new("/a/debug.log"), true));
+        assert!(wd.should_ignore_entry(Path::new("/a/.DS_Store"), false));
+        assert!(!wd.should_ignore_entry(Path::new("/a/notes.txt"), false));
+        assert!(!wd.should_ignore_entry(Path::new("/a/notes.txt"), true));
+    }
+
+    #[test]
+    fn dir_rules_prune_directories_only() {
+        let rules = Arc::new(FileNameRules::from_lines([".*/", "node_modules/"]));
+        let wd = WalkData::new(Path::new("/"), &[], &[], false, || false)
+            .with_file_name_rules(Arc::clone(&rules));
+        // 点开头的目录被剪：连内容一起不进索引。
+        assert!(wd.should_ignore_entry(Path::new("/a/.git"), true));
+        assert!(wd.should_ignore_entry(Path::new("/a/.config"), true));
+        // 普通依赖目录同理，不必写绝对路径。
+        assert!(wd.should_ignore_entry(Path::new("/a/b/node_modules"), true));
+        // 文件不受目录规则影响。
+        assert!(!wd.should_ignore_entry(Path::new("/a/.env"), false));
+        assert!(!wd.should_ignore_entry(Path::new("/a/notes.txt"), false));
+        // 不带尾斜杠的普通目录仍正常遍历。
+        assert!(!wd.should_ignore_entry(Path::new("/a/src"), true));
     }
 
     #[test]

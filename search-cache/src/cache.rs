@@ -9,7 +9,8 @@ use anyhow::{Context, Result, anyhow};
 use cardinal_sdk::{EventFlag, FsEvent, ScanType, current_event_id};
 use cardinal_syntax::{Expr, Filter, FilterKind, Term, optimize_query, parse_query};
 use fswalk::{
-    Node, NodeMetadata, WalkData, should_ignore_path, walk_it, walk_it_without_root_chain,
+    FileNameRules, Node, NodeMetadata, WalkData, should_ignore_path, walk_it,
+    walk_it_without_root_chain,
 };
 use hashbrown::HashSet;
 use namepool::NamePool;
@@ -19,7 +20,7 @@ use std::{
     io::ErrorKind,
     path::{Path, PathBuf},
     sync::{
-        LazyLock,
+        Arc, LazyLock,
         atomic::{AtomicBool, Ordering},
     },
     time::Instant,
@@ -131,12 +132,35 @@ impl SearchCache {
         self.file_nodes.include_paths().clone().into_boxed_slice()
     }
 
+    pub fn file_name_rules(&self) -> Arc<FileNameRules> {
+        Arc::clone(self.file_nodes.file_name_rules())
+    }
+
     /// The `path` is the root path of the constructed cache and fsevent watch path.
+    /// 兼容入口：不启用「忽略文件类型」规则读取缓存。
     pub fn try_read_persistent_cache(
         path: &Path,
         cache_path: &Path,
         current_ignore_paths: &Vec<PathBuf>,
         current_include_paths: &Vec<PathBuf>,
+        cancel: &'static AtomicBool,
+    ) -> Result<Self> {
+        Self::try_read_persistent_cache_with_rules(
+            path,
+            cache_path,
+            current_ignore_paths,
+            current_include_paths,
+            Arc::new(FileNameRules::default()),
+            cancel,
+        )
+    }
+
+    pub fn try_read_persistent_cache_with_rules(
+        path: &Path,
+        cache_path: &Path,
+        current_ignore_paths: &Vec<PathBuf>,
+        current_include_paths: &Vec<PathBuf>,
+        current_file_name_rules: Arc<FileNameRules>,
         cancel: &'static AtomicBool,
     ) -> Result<Self> {
         read_cache_from_file(cache_path)
@@ -176,12 +200,25 @@ impl SearchCache {
                     })
                     .map(|()| x)
             })
+            .and_then(|x| {
+                (x.ignore_file_rules_digest == current_file_name_rules.digest())
+                    .then_some(())
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "Inconsistent ignore file type rules: digest differs (cached: {}, current: {})",
+                            x.ignore_file_rules_digest,
+                            current_file_name_rules.digest()
+                        )
+                    })
+                    .map(|()| x)
+            })
             .map(
                 |PersistentStorage {
                      version: _,
                      path,
                      ignore_paths,
                      include_paths,
+                     ignore_file_rules_digest: _,
                      slab_root,
                      slab,
                      name_index,
@@ -190,7 +227,14 @@ impl SearchCache {
                  }| {
                     // name pool construction speed is fast enough that caching it doesn't worth it.
                     let name_index = NameIndex::construct_name_pool(name_index);
-                    let slab = FileNodes::new(path, ignore_paths, include_paths, slab, slab_root);
+                    let slab = FileNodes::new(
+                        path,
+                        ignore_paths,
+                        include_paths,
+                        current_file_name_rules,
+                        slab,
+                        slab_root,
+                    );
                     Self::new(slab, last_event_id, rescan_count, name_index, cancel)
                 },
             )
@@ -267,6 +311,7 @@ impl SearchCache {
             walk_data.root_path.to_path_buf(),
             walk_data.ignore_directories.to_vec(),
             walk_data.include_paths.to_vec(),
+            Arc::clone(walk_data.file_name_rules()),
             slab,
             slab_root,
         );
@@ -298,11 +343,28 @@ impl SearchCache {
         include_paths: Vec<PathBuf>,
         cancel: &'static AtomicBool,
     ) -> Self {
+        Self::noop_with_rules(
+            path,
+            ignore_paths,
+            include_paths,
+            Arc::new(FileNameRules::default()),
+            cancel,
+        )
+    }
+
+    pub fn noop_with_rules(
+        path: PathBuf,
+        ignore_paths: Vec<PathBuf>,
+        include_paths: Vec<PathBuf>,
+        file_name_rules: Arc<FileNameRules>,
+        cancel: &'static AtomicBool,
+    ) -> Self {
         Self {
             file_nodes: FileNodes::new(
                 path,
                 ignore_paths,
                 include_paths,
+                file_name_rules,
                 ThinSlab::new(),
                 SlabIndex::new(0),
             ),
@@ -664,12 +726,25 @@ impl SearchCache {
         current
     }
 
-    fn should_ignore(&self, path: &Path) -> bool {
-        should_ignore_path(
+    fn should_ignore(&self, path: &Path, is_dir: bool) -> bool {
+        if should_ignore_path(
             path,
             self.file_nodes.ignore_paths(),
             self.file_nodes.include_paths(),
-        )
+        ) {
+            return true;
+        }
+        // 文件名规则分两套桶：文件查文件桶、目录查目录桶（只含带尾斜杠的规则）。
+        // 目录不会被 `*.log` 这类文件规则误剪，但会被 `xxx/` 显式剪掉。
+        let Some(name) = path.file_name() else {
+            return false;
+        };
+        let rules = self.file_nodes.file_name_rules();
+        if is_dir {
+            rules.is_ignored_dir(name)
+        } else {
+            rules.is_ignored_file(name)
+        }
     }
 
     // `Self::scan_path_recursive`function returns index of the constructed node(with metadata provided).
@@ -677,11 +752,19 @@ impl SearchCache {
     // - Procedure contains metadata fetching, if metadata fetching failed, None is returned.
     fn scan_path_recursive(&mut self, path: &Path) -> Option<SlabIndex> {
         // Ensure path is under the watch root
-        if path.symlink_metadata().err().map(|e| e.kind()) == Some(ErrorKind::NotFound) {
-            self.remove_node_path(path);
-            return None;
+        let metadata = match path.symlink_metadata() {
+            Ok(metadata) => Some(metadata),
+            Err(error) if error.kind() == ErrorKind::NotFound => {
+                self.remove_node_path(path);
+                return None;
+            }
+            Err(_) => None,
         };
-        if self.should_ignore(path) {
+        let is_dir = metadata.as_ref().is_some_and(|metadata| metadata.is_dir());
+        if self.should_ignore(path, is_dir) {
+            // 命中忽略时必须摘掉可能已存在的旧节点：否则 `test.txt` 改名为 `test.log`
+            // 之后，旧节点会永久留在索引里并指向一个不存在的路径。
+            self.remove_node_path(path);
             return None;
         }
         let parent = path.parent().expect(
@@ -704,7 +787,8 @@ impl SearchCache {
             self.file_nodes.include_paths(),
             true,
             || self.stop.load(Ordering::Relaxed),
-        );
+        )
+        .with_file_name_rules(Arc::clone(self.file_nodes.file_name_rules()));
         walk_it_without_root_chain(&walk_data).map(|node| {
             let node = self.create_node_slab_update_name_index_and_name_pool(Some(parent), &node);
             // Push the newly created node to the parent's children
@@ -740,6 +824,7 @@ impl SearchCache {
         WalkData::new(phantom1, phantom2, phantom3, false, move || {
             stop.load(Ordering::Relaxed) || scan_cancellation_token.is_cancelled().is_none()
         })
+        .with_file_name_rules(Arc::clone(self.file_nodes.file_name_rules()))
     }
 
     pub fn rescan_with_walk_data<F>(&mut self, walk_data: &WalkData<'_, F>) -> Option<()>
@@ -763,7 +848,8 @@ impl SearchCache {
                 self.file_nodes.include_paths(),
                 false,
                 || self.stop.load(Ordering::Relaxed),
-            ),
+            )
+            .with_file_name_rules(Arc::clone(self.file_nodes.file_name_rules())),
             self.stop,
         ) else {
             info!("Rescan cancelled.");
@@ -803,6 +889,7 @@ impl SearchCache {
             path: self.file_nodes.path().to_path_buf(),
             ignore_paths: self.file_nodes.ignore_paths().clone(),
             include_paths: self.file_nodes.include_paths().clone(),
+            ignore_file_rules_digest: self.file_nodes.file_name_rules_digest(),
             slab_root: self.file_nodes.root(),
             name_index,
             slab,
@@ -825,7 +912,8 @@ impl SearchCache {
             name_index,
             stop: _,
         } = self;
-        let (path, ignore_paths, include_paths, slab_root, slab) = file_nodes.into_parts();
+        let (path, ignore_paths, include_paths, ignore_file_rules_digest, slab_root, slab) =
+            file_nodes.into_parts();
         let name_index = name_index.into_persistent();
         write_cache_to_file(
             cache_path,
@@ -834,6 +922,7 @@ impl SearchCache {
                 path,
                 ignore_paths,
                 include_paths,
+                ignore_file_rules_digest,
                 slab_root,
                 slab,
                 name_index,
@@ -2130,6 +2219,7 @@ mod tests {
             PathBuf::from("/virtual/root"),
             Vec::new(),
             Vec::new(),
+            Arc::default(),
             slab,
             root_idx,
         );
@@ -2153,6 +2243,7 @@ mod tests {
             PathBuf::from("/virtual/root"),
             Vec::new(),
             Vec::new(),
+            Arc::default(),
             slab,
             root,
         );

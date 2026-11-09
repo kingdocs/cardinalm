@@ -33,6 +33,7 @@ pub struct WatchConfigUpdate {
     pub watch_root: String,
     pub ignore_paths: Vec<String>,
     pub include_paths: Vec<String>,
+    pub ignore_file_rules: Vec<String>,
     pub scan_cancellation_token: CancellationToken,
 }
 
@@ -414,6 +415,7 @@ pub fn set_watch_config(
     watch_root: String,
     ignore_paths: Vec<String>,
     include_paths: Option<Vec<String>>,
+    ignore_file_rules: Option<Vec<String>>,
     state: State<'_, SearchState>,
 ) {
     let Some((watch_root, ignore_paths, include_paths)) = normalize_watch_config(
@@ -430,6 +432,7 @@ pub fn set_watch_config(
         watch_root,
         ignore_paths,
         include_paths,
+        ignore_file_rules: normalize_ignore_file_rules(ignore_file_rules.unwrap_or_default()),
         scan_cancellation_token: CancellationToken::new_scan(),
     }) {
         error!("Failed to request watch config change: {e:?}");
@@ -455,14 +458,27 @@ pub async fn start_logic(
     watch_root: String,
     ignore_paths: Vec<String>,
     include_paths: Option<Vec<String>>,
+    ignore_file_rules: Option<Vec<String>>,
 ) {
     if let Some(sender) = LOGIC_START.get() {
         let _ = sender.try_send(LogicStartConfig {
             watch_root,
             ignore_paths,
             include_paths: include_paths.unwrap_or_default(),
+            ignore_file_rules: normalize_ignore_file_rules(ignore_file_rules.unwrap_or_default()),
         });
     }
+}
+
+/// 规范化"忽略文件类型"规则：去首尾空白、丢空行与 `#` 注释、去重，保留用户书写顺序。
+pub(crate) fn normalize_ignore_file_rules(rules: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    rules
+        .into_iter()
+        .map(|rule| rule.trim().to_string())
+        .filter(|rule| !rule.is_empty() && !rule.starts_with('#'))
+        .filter(|rule| seen.insert(rule.clone()))
+        .collect()
 }
 
 #[tauri::command]

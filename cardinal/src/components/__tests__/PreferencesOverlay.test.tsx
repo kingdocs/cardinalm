@@ -32,6 +32,8 @@ const baseProps = {
   defaultIgnorePaths: ['/default/ignore'],
   includePaths: ['/include/a'],
   defaultIncludePaths: [] as string[],
+  ignoreFileRules: ['*.log'],
+  defaultIgnoreFileRules: [] as string[],
   onReset: vi.fn(),
   themeResetToken: 0,
   onWatchConfigChange: vi.fn(),
@@ -51,6 +53,7 @@ describe('PreferencesOverlay', () => {
       watchRoot: '/new/root',
       ignorePaths: baseProps.ignorePaths,
       includePaths: baseProps.includePaths,
+      ignoreFileRules: baseProps.ignoreFileRules,
     });
   });
 
@@ -67,6 +70,7 @@ describe('PreferencesOverlay', () => {
       watchRoot: baseProps.watchRoot,
       ignorePaths: ['/tmp/one', '/tmp/two'],
       includePaths: baseProps.includePaths,
+      ignoreFileRules: baseProps.ignoreFileRules,
     });
   });
 
@@ -85,6 +89,7 @@ describe('PreferencesOverlay', () => {
       watchRoot: baseProps.watchRoot,
       ignorePaths: baseProps.ignorePaths,
       includePaths: ['/Volumes/media', '/Volumes/work'],
+      ignoreFileRules: baseProps.ignoreFileRules,
     });
   });
 
@@ -150,6 +155,7 @@ describe('PreferencesOverlay', () => {
       watchRoot: baseProps.defaultWatchRoot,
       ignorePaths: baseProps.defaultIgnorePaths,
       includePaths: baseProps.defaultIncludePaths,
+      ignoreFileRules: baseProps.ignoreFileRules,
     });
   });
 

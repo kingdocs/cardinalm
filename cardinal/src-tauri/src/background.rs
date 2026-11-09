@@ -12,7 +12,7 @@ use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rayon::spawn;
 use search_cache::{
-    HandleFSEError, SearchCache, SearchOptions, SearchResultNode, SlabIndex, WalkData,
+    FileNameRules, HandleFSEError, SearchCache, SearchOptions, SearchResultNode, SlabIndex, WalkData,
 };
 use search_cancel::CancellationToken;
 use serde::Serialize;
@@ -107,8 +107,10 @@ fn handle_watch_config_update(
         watch_root: next_watch_root,
         ignore_paths,
         include_paths,
+        ignore_file_rules,
         scan_cancellation_token,
     } = update;
+    let next_file_name_rules = std::sync::Arc::new(FileNameRules::from_lines(&ignore_file_rules));
 
     let next_ignore_paths = ignore_paths
         .into_iter()
@@ -130,12 +132,13 @@ fn handle_watch_config_update(
         &next_watch_root,
         &next_ignore_paths,
         &next_include_paths,
+        std::sync::Arc::clone(&next_file_name_rules),
         scan_cancellation_token,
     ) {
         Some(cache) => {
             info!(
-                "Search cache built. New root: {}, ignore paths: {:?}, include paths: {:?}",
-                next_watch_root, next_ignore_paths, next_include_paths
+                "Search cache built. New root: {}, ignore paths: {:?}, include paths: {:?}, ignore file type rules: {:?}",
+                next_watch_root, next_ignore_paths, next_include_paths, ignore_file_rules
             );
             emit_status_bar_update(app_handle, cache.get_total_files(), 0, 0);
             cache
@@ -144,10 +147,11 @@ fn handle_watch_config_update(
             // if cache build is cancelled, we cannot reuse the old cache since
             // it's tied to the old watch config; create a noop cache instead
             info!("Watch config change cancelled, use noop state");
-            SearchCache::noop(
+            SearchCache::noop_with_rules(
                 PathBuf::from(&next_watch_root),
                 next_ignore_paths,
                 next_include_paths,
+                next_file_name_rules,
                 &APP_QUIT,
             )
         }
@@ -424,12 +428,14 @@ pub(crate) fn build_search_cache(
     watch_root: &str,
     ignore_paths: &[PathBuf],
     include_paths: &[PathBuf],
+    file_name_rules: std::sync::Arc<FileNameRules>,
     scan_cancellation_token: CancellationToken,
 ) -> Option<SearchCache> {
     let path = Path::new(watch_root);
     let walk_data = WalkData::new(path, ignore_paths, include_paths, false, move || {
         APP_QUIT.load(Ordering::Relaxed) || scan_cancellation_token.is_cancelled().is_none()
-    });
+    })
+    .with_file_name_rules(file_name_rules);
     let walking_done = AtomicBool::new(false);
 
     std::thread::scope(|s| {

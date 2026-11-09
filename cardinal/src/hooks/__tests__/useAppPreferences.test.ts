@@ -148,6 +148,7 @@ describe('useAppPreferences', () => {
         watchRoot: '/tmp',
         ignorePaths: ['/tmp/ignore'],
         includePaths: [],
+        ignoreFileRules: [],
       });
     });
 
@@ -189,6 +190,7 @@ describe('useAppPreferences', () => {
         watchRoot: '/workspace',
         ignorePaths: ['/Volumes'],
         includePaths: [],
+        ignoreFileRules: [],
       });
     });
 
@@ -226,6 +228,7 @@ describe('useAppPreferences', () => {
         watchRoot: '/new-root',
         ignorePaths: ['/Volumes'], // same as before
         includePaths: [],
+        ignoreFileRules: [],
       });
     });
 
@@ -267,6 +270,7 @@ describe('useAppPreferences', () => {
         watchRoot: '/workspace', // same as before
         ignorePaths: ['/tmp/ignore'], // different
         includePaths: [],
+        ignoreFileRules: [],
       });
     });
 
@@ -316,6 +320,7 @@ describe('useAppPreferences', () => {
         watchRoot: '/workspace',
         ignorePaths: ['/System', '/Volumes'], // same items, different order
         includePaths: [],
+        ignoreFileRules: [],
       });
     });
 
@@ -356,6 +361,7 @@ describe('useAppPreferences', () => {
         watchRoot: '/workspace',
         ignorePaths: ['/Volumes'],
         includePaths: ['/Volumes/media'],
+        ignoreFileRules: [],
       });
     });
 

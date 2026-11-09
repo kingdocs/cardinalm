@@ -195,6 +195,8 @@ function App() {
     defaultIgnorePaths,
     includePaths,
     defaultIncludePaths,
+    ignoreFileRules,
+    defaultIgnoreFileRules,
     preferencesResetToken,
     handleWatchConfigChange,
     handleResetPreferences,
@@ -458,6 +460,8 @@ function App() {
         defaultIgnorePaths={defaultIgnorePaths}
         includePaths={includePaths}
         defaultIncludePaths={defaultIncludePaths}
+        ignoreFileRules={ignoreFileRules}
+        defaultIgnoreFileRules={defaultIgnoreFileRules}
         onReset={handleResetPreferences}
         themeResetToken={preferencesResetToken}
       />

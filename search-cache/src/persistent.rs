@@ -12,7 +12,13 @@ use std::{
 use tracing::info;
 use typed_num::Num;
 
-const LSF_VERSION: i64 = 6;
+/// 个人自用版：上游为 6，本改造在 `PersistentStorage` 里新增了
+/// `ignore_file_rules_digest` 字段，格式已不兼容。
+///
+/// 刻意取 1007 而不是 7：上游若把版本升到 7、8、9，也不会与本地的
+/// 「版本号相同但字段不同」撞车（那种情况反序列化会失败在字段层，报错更晦涩）。
+/// 版本号不一致时 `read_cache_from_file` 会直接放弃缓存并触发全量重建，属正常降级。
+const LSF_VERSION: i64 = 1007;
 
 #[derive(Serialize, Deserialize)]
 pub struct PersistentStorage {
@@ -25,6 +31,9 @@ pub struct PersistentStorage {
     pub ignore_paths: Vec<PathBuf>,
     /// Paths to include even when they fall under an ignored directory.
     pub include_paths: Vec<PathBuf>,
+    /// Fingerprint of the "ignore file types" rules that produced this cache.
+    /// 规则变了指纹就变，旧缓存自动失效并触发全量重建。
+    pub ignore_file_rules_digest: u64,
     /// Root index of the slab
     pub slab_root: SlabIndex,
     pub slab: ThinSlab<SlabNode>,

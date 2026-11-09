@@ -71,7 +71,7 @@
       "settings": "打开偏好设置"
     },
     "rescan": {
-      "disabledHint": "Cardinal 准备就绪后即可重新扫描。",
+      "disabledHint": "CardinalM 准备就绪后即可重新扫描。",
       "enabledHint": "触发一次完整的文件系统重新扫描。",
       "errorCountSuffix": " 已出现{{formatted}}次文件系统错误，建议重新扫描。"
     },
@@ -85,11 +85,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "需要完全磁盘访问权限",
-      "description": "Cardinal 需要 macOS 的完全磁盘访问权限才能索引并监控系统中的文件。请在系统设置中为 Cardinal 启用完全磁盘访问。",
+      "description": "CardinalM 需要 macOS 的完全磁盘访问权限才能索引并监控系统中的文件。请在系统设置中为 CardinalM 启用完全磁盘访问。",
       "steps": {
         "one": "打开 系统设置 > 隐私与安全性 > 完全磁盘访问。",
-        "two": "点击锁形图标以允许更改，并启用 Cardinal。",
-        "three": "按提示允许 macOS 重新启动 Cardinal。"
+        "two": "点击锁形图标以允许更改，并启用 CardinalM。",
+        "three": "按提示允许 macOS 重新启动 CardinalM。"
       },
       "status": {
         "checking": "正在检查权限状态…",
@@ -121,7 +121,7 @@
   },
   "preferences": {
     "title": "偏好设置",
-    "heading": "自定义 Cardinal",
+    "heading": "自定义 CardinalM",
     "subtitle": "随心调整外观和语言。",
     "appearance": "外观",
     "themeHint": "选择浅色、深色或跟随系统。",
@@ -151,8 +151,8 @@
     }
   },
   "tray": {
-    "open": "打开 Cardinal",
-    "quit": "退出 Cardinal"
+    "open": "打开 CardinalM",
+    "quit": "退出 CardinalM"
   },
   "watchRoot": {
     "label": "监控根路径",
@@ -162,7 +162,7 @@
       "absolute": "请输入以“/”或“~”开头的绝对路径。"
     },
     "title": "选择监控根路径",
-    "description": "Cardinal 将只索引并监控该目录下的文件。你之后可以在偏好设置中更改。",
+    "description": "CardinalM 将只索引并监控该目录下的文件。你之后可以在偏好设置中更改。",
     "action": "开始初始化"
   },
   "ignorePaths": {
@@ -170,6 +170,13 @@
     "help": "每行一个路径；这些目录将不会被索引。",
     "errors": {
       "absolute": "每个路径需以“/”或“~”开头。"
+    }
+  },
+  "ignoreFileRules": {
+    "label": "忽略规则",
+    "help": "每行一条，按名称匹配，大小写不敏感。*.log、.DS_Store 这类只挡文件，不影响文件夹索引；行尾加 / 表示只挡目录，如 .*/ 排除所有点开头的目录（.git、.venv、.idea），node_modules/ 排除所有依赖目录，整棵子树都不入索引。",
+    "errors": {
+      "fileName": "这里只填名称通配；唯一允许的 / 是行尾的目录标记（如 .*/）。含路径的规则请填到上面的「忽略路径」。"
     }
   },
   "includePaths": {

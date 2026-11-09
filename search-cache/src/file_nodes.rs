@@ -1,8 +1,10 @@
 use crate::{SlabIndex, SlabNode, ThinSlab};
+use fswalk::FileNameRules;
 use std::{
     ffi::OsStr,
     ops::{Deref, DerefMut},
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 #[derive(Debug)]
@@ -10,6 +12,8 @@ pub struct FileNodes {
     path: PathBuf,
     ignore_paths: Vec<PathBuf>,
     include_paths: Vec<PathBuf>,
+    /// 全局忽略文件类型规则（按文件名匹配，只作用于文件）。
+    file_name_rules: Arc<FileNameRules>,
     slab: ThinSlab<SlabNode>,
     root: SlabIndex,
 }
@@ -19,6 +23,7 @@ impl FileNodes {
         path: PathBuf,
         ignore_paths: Vec<PathBuf>,
         include_paths: Vec<PathBuf>,
+        file_name_rules: Arc<FileNameRules>,
         slab: ThinSlab<SlabNode>,
         root: SlabIndex,
     ) -> Self {
@@ -26,6 +31,7 @@ impl FileNodes {
             path,
             ignore_paths,
             include_paths,
+            file_name_rules,
             slab,
             root,
         }
@@ -62,6 +68,14 @@ impl FileNodes {
         &self.include_paths
     }
 
+    pub(crate) fn file_name_rules(&self) -> &Arc<FileNameRules> {
+        &self.file_name_rules
+    }
+
+    pub(crate) fn file_name_rules_digest(&self) -> u64 {
+        self.file_name_rules.digest()
+    }
+
     pub(crate) fn take_slab(&mut self) -> ThinSlab<SlabNode> {
         std::mem::take(&mut self.slab)
     }
@@ -76,6 +90,7 @@ impl FileNodes {
         PathBuf,
         Vec<PathBuf>,
         Vec<PathBuf>,
+        u64,
         SlabIndex,
         ThinSlab<SlabNode>,
     ) {
@@ -83,10 +98,12 @@ impl FileNodes {
             path,
             ignore_paths,
             include_paths,
+            file_name_rules,
             slab,
             root,
         } = self;
-        (path, ignore_paths, include_paths, root, slab)
+        let digest = file_name_rules.digest();
+        (path, ignore_paths, include_paths, digest, root, slab)
     }
 }
 

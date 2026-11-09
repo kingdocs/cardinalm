@@ -8,6 +8,7 @@ import { setTrayEnabled } from '../tray';
 import { getStoredTrayIconEnabled, persistTrayIconEnabled } from '../trayIconPreference';
 import { setWatchConfig } from '../utils/watchConfig';
 import type { FullDiskAccessStatus } from './useFullDiskAccessPermission';
+import { useIgnoreFileRules } from './useIgnoreFileRules';
 import { useIgnorePaths } from './useIgnorePaths';
 import { useIncludePaths } from './useIncludePaths';
 import { useWatchRoot } from './useWatchRoot';
@@ -16,6 +17,7 @@ type WatchConfigChangePayload = {
   watchRoot: string;
   ignorePaths: string[];
   includePaths: string[];
+  ignoreFileRules: string[];
 };
 
 type UseAppPreferencesOptions = {
@@ -36,6 +38,8 @@ type UseAppPreferencesResult = {
   defaultIgnorePaths: string[];
   includePaths: string[];
   defaultIncludePaths: string[];
+  ignoreFileRules: string[];
+  defaultIgnoreFileRules: string[];
   preferencesResetToken: number;
   handleWatchConfigChange: (next: WatchConfigChangePayload) => void;
   handleResetPreferences: () => void;
@@ -57,6 +61,7 @@ export function useAppPreferences({
   const { watchRoot, setWatchRoot, defaultWatchRoot } = useWatchRoot();
   const { ignorePaths, setIgnorePaths, defaultIgnorePaths } = useIgnorePaths();
   const { includePaths, setIncludePaths, defaultIncludePaths } = useIncludePaths();
+  const { ignoreFileRules, setIgnoreFileRules, defaultIgnoreFileRules } = useIgnoreFileRules();
   const logicStartedRef = useRef(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [trayIconEnabled, setTrayIconEnabled] = useState<boolean>(() => getStoredTrayIconEnabled());
@@ -92,15 +97,28 @@ export function useAppPreferences({
     }
 
     logicStartedRef.current = true;
-    void invoke('start_logic', { watchRoot, ignorePaths, includePaths });
-  }, [fullDiskAccessStatus, ignorePaths, includePaths, isCheckingFullDiskAccess, watchRoot]);
+    void invoke('start_logic', { watchRoot, ignorePaths, includePaths, ignoreFileRules });
+  }, [
+    fullDiskAccessStatus,
+    ignoreFileRules,
+    ignorePaths,
+    includePaths,
+    isCheckingFullDiskAccess,
+    watchRoot,
+  ]);
 
   const applyWatchConfig = useCallback(
-    (nextWatchRoot: string, nextIgnorePaths: string[], nextIncludePaths: string[]) => {
+    (
+      nextWatchRoot: string,
+      nextIgnorePaths: string[],
+      nextIncludePaths: string[],
+      nextIgnoreFileRules: string[],
+    ) => {
       const watchConfigChanged =
         nextWatchRoot !== watchRoot ||
         !areStringArraysEqual(nextIgnorePaths, ignorePaths) ||
-        !areStringArraysEqual(nextIncludePaths, includePaths);
+        !areStringArraysEqual(nextIncludePaths, includePaths) ||
+        !areStringArraysEqual(nextIgnoreFileRules, ignoreFileRules);
 
       if (!watchConfigChanged) {
         return;
@@ -109,19 +127,23 @@ export function useAppPreferences({
       setWatchRoot(nextWatchRoot);
       setIgnorePaths(nextIgnorePaths);
       setIncludePaths(nextIncludePaths);
+      setIgnoreFileRules(nextIgnoreFileRules);
       if (logicStartedRef.current && nextWatchRoot) {
         void setWatchConfig({
           watchRoot: nextWatchRoot,
           ignorePaths: nextIgnorePaths,
           includePaths: nextIncludePaths,
+          ignoreFileRules: nextIgnoreFileRules,
         });
       }
       refreshSearchResults();
     },
     [
       ignorePaths,
+      ignoreFileRules,
       includePaths,
       refreshSearchResults,
+      setIgnoreFileRules,
       setIgnorePaths,
       setIncludePaths,
       setWatchRoot,
@@ -131,7 +153,12 @@ export function useAppPreferences({
 
   const handleWatchConfigChange = useCallback(
     (next: WatchConfigChangePayload) => {
-      applyWatchConfig(next.watchRoot, next.ignorePaths, next.includePaths);
+      applyWatchConfig(
+        next.watchRoot,
+        next.ignorePaths,
+        next.includePaths,
+        next.ignoreFileRules,
+      );
     },
     [applyWatchConfig],
   );
@@ -158,6 +185,8 @@ export function useAppPreferences({
     defaultIgnorePaths,
     includePaths,
     defaultIncludePaths,
+    ignoreFileRules,
+    defaultIgnoreFileRules,
     preferencesResetToken,
     handleWatchConfigChange,
     handleResetPreferences,

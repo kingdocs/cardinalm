@@ -34,7 +34,7 @@ use std::{
 use tauri::{Emitter, Manager, RunEvent, WindowEvent};
 use tracing::{info, level_filters::LevelFilter, warn};
 use tracing_subscriber::EnvFilter;
-use window_controls::{activate_window, hide_window};
+use window_controls::activate_window;
 
 static DB_PATH: OnceCell<PathBuf> = OnceCell::new();
 pub(crate) static LOGIC_START: OnceCell<Sender<LogicStartConfig>> = OnceCell::new();
@@ -46,6 +46,7 @@ pub(crate) struct LogicStartConfig {
     pub watch_root: String,
     pub ignore_paths: Vec<String>,
     pub include_paths: Vec<String>,
+    pub ignore_file_rules: Vec<String>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -91,22 +92,17 @@ pub fn run() -> Result<()> {
                 WindowEvent::Focused(_) => {
                     let _ = update_window_state_tx_for_window.try_send(());
                 }
-                WindowEvent::CloseRequested { api, .. } => {
+                WindowEvent::CloseRequested { .. } => {
+                    // 个人自用版：关闭窗口 = 退出整个应用。
+                    // 上游行为是 prevent_close + hide_window 驻留后台（托盘应用惯例），
+                    // 此处不需要后台驻留。
+                    // exit(0) 带 code 调用，不会触发下方 ExitRequested 的
+                    // prevent_exit 分支，缓存照常经 RunEvent::Exit 落盘。
                     if EXIT_REQUESTED.load(Ordering::Relaxed) {
                         return;
                     }
-
-                    api.prevent_close();
-
-                    let Some(window) = window.get_webview_window("main") else {
-                        warn!("Close requested but main window is unavailable");
-                        return;
-                    };
-
-                    if hide_window(&window) {
-                        let _ = update_window_state_tx_for_window.try_send(());
-                        info!("Main window hidden; Cardinal keeps running in the background");
-                    }
+                    info!("Main window close requested; exiting application");
+                    window.app_handle().exit(0);
                 }
                 _ => {}
             }
@@ -239,12 +235,22 @@ fn run_logic_thread(
     let path = PathBuf::from(&watch_root);
     let ignore_paths: Vec<_> = ignore_paths.into_iter().map(PathBuf::from).collect();
     let include_paths: Vec<_> = include_paths.into_iter().map(PathBuf::from).collect();
+    let file_name_rules = std::sync::Arc::new(search_cache::FileNameRules::from_lines(
+        &config.ignore_file_rules,
+    ));
+    if !config.ignore_file_rules.is_empty() {
+        info!(
+            "Ignore file type rules: {:?}",
+            config.ignore_file_rules
+        );
+    }
 
-    let mut cache = match SearchCache::try_read_persistent_cache(
+    let mut cache = match SearchCache::try_read_persistent_cache_with_rules(
         &path,
         db_path,
         &ignore_paths,
         &include_paths,
+        std::sync::Arc::clone(&file_name_rules),
         &APP_QUIT,
     ) {
         Ok(cached) => {
@@ -259,6 +265,7 @@ fn run_logic_thread(
                 &watch_root,
                 &ignore_paths,
                 &include_paths,
+                std::sync::Arc::clone(&file_name_rules),
                 CancellationToken::new_scan(),
             ) {
                 emit_status_bar_update(app_handle, cache.get_total_files(), 0, 0);
@@ -274,10 +281,11 @@ fn run_logic_thread(
                 return;
             } else {
                 info!("Initial scan cancelled by newer request, use noop cache");
-                SearchCache::noop(
+                SearchCache::noop_with_rules(
                     path.clone(),
                     ignore_paths.clone(),
                     include_paths.clone(),
+                    std::sync::Arc::clone(&file_name_rules),
                     &APP_QUIT,
                 )
             }

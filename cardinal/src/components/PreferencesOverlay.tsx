@@ -18,11 +18,14 @@ type PreferencesOverlayProps = {
     watchRoot: string;
     ignorePaths: string[];
     includePaths: string[];
+    ignoreFileRules: string[];
   }) => void;
   ignorePaths: string[];
   defaultIgnorePaths: string[];
   includePaths: string[];
   defaultIncludePaths: string[];
+  ignoreFileRules: string[];
+  defaultIgnoreFileRules: string[];
   onReset: () => void;
   themeResetToken: number;
 };
@@ -42,6 +45,8 @@ export function PreferencesOverlay({
   defaultIgnorePaths,
   includePaths,
   defaultIncludePaths,
+  ignoreFileRules,
+  defaultIgnoreFileRules,
   onReset,
   themeResetToken,
 }: PreferencesOverlayProps): React.JSX.Element | null {
@@ -50,6 +55,9 @@ export function PreferencesOverlay({
   const [watchRootInput, setWatchRootInput] = useState<string>(() => watchRoot);
   const [ignorePathsInput, setIgnorePathsInput] = useState<string>(() => ignorePaths.join('\n'));
   const [includePathsInput, setIncludePathsInput] = useState<string>(() => includePaths.join('\n'));
+  const [ignoreFileRulesInput, setIgnoreFileRulesInput] = useState<string>(() =>
+    ignoreFileRules.join('\n'),
+  );
 
   useEffect(() => {
     if (!open) {
@@ -81,7 +89,8 @@ export function PreferencesOverlay({
     setWatchRootInput(watchRoot);
     setIgnorePathsInput(ignorePaths.join('\n'));
     setIncludePathsInput(includePaths.join('\n'));
-  }, [open, watchRoot, ignorePaths, includePaths]);
+    setIgnoreFileRulesInput(ignoreFileRules.join('\n'));
+  }, [open, watchRoot, ignorePaths, includePaths, ignoreFileRules]);
 
   const commitThreshold = useCallback(() => {
     const numericText = thresholdInput.replace(/[^\d]/g, '');
@@ -127,8 +136,27 @@ export function PreferencesOverlay({
     return invalid ? t('includePaths.errors.absolute') : null;
   })();
 
+  const parsedIgnoreFileRules = ignoreFileRulesInput
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  // 规则只匹配文件名本身。唯一的例外是**尾斜杠**——它是「只匹配目录」的标记
+  // （`.*/` 排除所有点开头的目录），去掉尾斜杠后仍含 `/` 才是真正的路径规则，
+  // 那种要写到「忽略路径」里，否则用户会以为排除了整个目录，实际什么都没发生。
+  const ignoreFileRulesErrorMessage = parsedIgnoreFileRules.some((line) => {
+    const pattern = line.replace(/\/+$/, '').trim();
+    return pattern.length === 0 || pattern.includes('/');
+  })
+    ? t('ignoreFileRules.errors.fileName')
+    : null;
+
   const handleSave = (): void => {
-    if (watchRootErrorMessage || ignorePathsErrorMessage || includePathsErrorMessage) {
+    if (
+      watchRootErrorMessage ||
+      ignorePathsErrorMessage ||
+      includePathsErrorMessage ||
+      ignoreFileRulesErrorMessage
+    ) {
       return;
     }
     commitThreshold();
@@ -137,10 +165,12 @@ export function PreferencesOverlay({
       watchRoot: trimmedWatchRoot,
       ignorePaths: parsedIgnorePaths,
       includePaths: parsedIncludePaths,
+      ignoreFileRules: parsedIgnoreFileRules,
     });
     setWatchRootInput(trimmedWatchRoot);
     setIgnorePathsInput(parsedIgnorePaths.join('\n'));
     setIncludePathsInput(parsedIncludePaths.join('\n'));
+    setIgnoreFileRulesInput(parsedIgnoreFileRules.join('\n'));
     onClose();
   };
 
@@ -149,6 +179,7 @@ export function PreferencesOverlay({
     setWatchRootInput(defaultWatchRoot);
     setIgnorePathsInput(defaultIgnorePaths.join('\n'));
     setIncludePathsInput(defaultIncludePaths.join('\n'));
+    setIgnoreFileRulesInput(defaultIgnoreFileRules.join('\n'));
     onReset();
   };
 
@@ -269,6 +300,32 @@ export function PreferencesOverlay({
           </div>
           <div className="preferences-row">
             <div className="preferences-row__details">
+              <p className="preferences-label" title={t('ignoreFileRules.help')}>
+                {t('ignoreFileRules.label')}
+              </p>
+            </div>
+            <div className="preferences-control">
+              <textarea
+                className="preferences-field preferences-textarea"
+                value={ignoreFileRulesInput}
+                onChange={(event) => setIgnoreFileRulesInput(event.target.value)}
+                aria-label={t('ignoreFileRules.label')}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {ignoreFileRulesErrorMessage ? (
+                <p
+                  className="permission-status permission-status--error preferences-field-error"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {ignoreFileRulesErrorMessage}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="preferences-row">
+            <div className="preferences-row__details">
               <p className="preferences-label" title={t('includePaths.help')}>
                 {t('includePaths.label')}
               </p>
@@ -300,7 +357,10 @@ export function PreferencesOverlay({
             type="button"
             onClick={handleSave}
             disabled={Boolean(
-              watchRootErrorMessage || ignorePathsErrorMessage || includePathsErrorMessage,
+              watchRootErrorMessage ||
+                ignorePathsErrorMessage ||
+                includePathsErrorMessage ||
+                ignoreFileRulesErrorMessage,
             )}
           >
             {t('preferences.save')}
