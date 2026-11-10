@@ -6,6 +6,8 @@
 > - **Close-to-quit** — closing the main window exits the app instead of hiding it to the background.
 >
 > Implementation notes: the matcher is a self-contained, zero-dependency Rust module (`fswalk/src/ignore_file.rs`); rules are persisted with a digest so editing them invalidates the cache deterministically; the cache format version is offset from upstream to avoid collisions. This fork tracks upstream and rebases on it, keeping changes minimal and contained.
+>
+> Releases are signed with a machine-local self-signed code-signing certificate (`scripts/sign-self-signed.sh`), so rebuilding no longer invalidates the macOS Full Disk Access grant. It is not an Apple Developer ID: Gatekeeper still requires right-click > Open on first launch.
 
 <div align="center">
   <img src="cardinal/mac-icon_1024x1024.png" alt="Cardinal icon" width="120" height="120">

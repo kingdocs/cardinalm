@@ -7,6 +7,8 @@
 >
 > 實作說明：匹配器是獨立、零依賴的 Rust 模組（`fswalk/src/ignore_file.rs`）；規則以指紋形式寫入快取，因此只有規則真正變化才會觸發重建；快取格式版本號與上游錯開以免衝突。本衍生版長期跟隨上游 rebase，改動盡量小而集中。
 >
+> 發佈版使用本機自簽程式碼簽署憑證簽署（見 `scripts/sign-self-signed.sh`），重編譯不會再讓「完全磁碟存取」授權失效；但不是 Apple Developer ID，首次啟動仍需右鍵「開啟」。
+>
 > **下載編譯好的版本（Apple Silicon）**：[Releases 頁面](https://github.com/kingdocs/cardinalm/releases)
 
 <div align="center">
