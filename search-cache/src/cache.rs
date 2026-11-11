@@ -1007,8 +1007,10 @@ impl SearchCache {
 
     pub fn handle_fs_events(&mut self, events: Vec<FsEvent>) -> Result<(), HandleFSEError> {
         let max_event_id = events.iter().map(|e| e.id).max();
-        // If rescan needed, early exit.
-        if events.iter().any(|event| {
+        // [port:franciscoxc/ac431d69] 先记下需要重扫，但整批照常处理完再返回 Rescan。
+        // 原实现一旦有事件要求 rescan 就提前 return，同批其余变更被整体丢弃，
+        // 而此后没有任何地方真的执行重扫 —— 那些删除就永久丢失了。
+        let needs_rescan = events.iter().any(|event| {
             if event.flag.contains(EventFlag::HistoryDone) {
                 info!("History processing done: {:?}", event);
             }
@@ -1018,11 +1020,17 @@ impl SearchCache {
             } else {
                 false
             }
-        }) {
-            self.rescan_count = self.rescan_count.saturating_add(1);
-            return Err(HandleFSEError::Rescan);
-        }
+        });
+
+        // [port:franciscoxc/ac431d69] watch 根本身不能增量扫描：scan_path_recursive
+        // 会去取父目录，根为 / 时没有父目录会 panic，连带把后台线程带崩。
+        // 原先的提前 return 恰好掩盖了这条路径；改成分批处理后就暴露出来了。
+        let root = self.file_nodes.path().to_path_buf();
         for scan_path in scan_paths(events) {
+            if scan_path == root {
+                info!("Skipping the watch root; the rescan below covers it");
+                continue;
+            }
             info!("Scanning path: {scan_path:?}");
             let folder = self.scan_path_recursive(&scan_path);
             if folder.is_some() {
@@ -1031,6 +1039,11 @@ impl SearchCache {
         }
         if let Some(max_event_id) = max_event_id {
             self.update_last_event_id(max_event_id);
+        }
+
+        if needs_rescan {
+            self.rescan_count = self.rescan_count.saturating_add(1);
+            return Err(HandleFSEError::Rescan);
         }
         Ok(())
     }
@@ -3466,6 +3479,60 @@ mod tests {
         assert_eq!(cache.file_nodes.len(), 2 + depth(temp_path));
         assert_eq!(cache.name_index.len(), 2 + depth(temp_path));
         assert_eq!(cache.search("new_file.txt").unwrap().len(), 1);
+    }
+
+    /// [port:franciscoxc/ac431d69] 一个要求 rescan 的事件不能把整批变更一起带走。
+    ///
+    /// 删除单独到达时处理是正确的，但它们总是和别的事件成批来的：只要批里
+    /// 有一个 watch 根上的事件，原实现就整体提前 return，而此后没有任何地方
+    /// 真的执行重扫 —— 这些删除就永久丢失了。表现是「整个目录一次删掉索引里
+    /// 还在，单个文件删掉却正常消失」。
+    #[test]
+    fn a_rescan_event_does_not_discard_the_rest_of_the_batch() {
+        let temp_dir = TempDir::new("batch_with_rescan").unwrap();
+        let root = temp_dir.path();
+        fs::create_dir_all(root.join("keep")).unwrap();
+        fs::write(root.join("keep/stays.txt"), b"x").unwrap();
+        fs::write(root.join("goes.txt"), b"x").unwrap();
+
+        let mut cache = SearchCache::walk_fs(root);
+        assert_eq!(
+            cache.search("goes.txt").unwrap().len(),
+            1,
+            "indexed to begin with"
+        );
+
+        // 真删掉，然后把这条删除和一个根级事件放进同一批。
+        fs::remove_file(root.join("goes.txt")).unwrap();
+        let batch = vec![
+            FsEvent {
+                path: root.to_path_buf(),
+                id: cache.last_event_id + 1,
+                flag: EventFlag::RootChanged,
+            },
+            FsEvent {
+                path: root.join("goes.txt"),
+                id: cache.last_event_id + 2,
+                flag: EventFlag::ItemRemoved,
+            },
+        ];
+        let outcome = cache.handle_fs_events(batch);
+
+        // 仍然报告需要重扫是应该的；丢掉删除不行。
+        assert!(
+            matches!(outcome, Err(HandleFSEError::Rescan)),
+            "still asks for a rescan"
+        );
+        assert_eq!(
+            cache.search("goes.txt").unwrap().len(),
+            0,
+            "the deletion in the batch has to be applied even though a rescan was requested"
+        );
+        assert_eq!(
+            cache.search("stays.txt").unwrap().len(),
+            1,
+            "untouched files stay"
+        );
     }
 
     #[test]

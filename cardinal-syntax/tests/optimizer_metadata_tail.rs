@@ -73,3 +73,27 @@ fn metadata_tail_preserves_non_metadata_order() {
     filter_is_kind(&p[l - 2], &FilterKind::DateModified);
     filter_is_kind(&p[l - 1], &FilterKind::DateCreated);
 }
+
+/// [port:franciscoxc/ec682553] `content:` 必须排在所有过滤器之后，
+/// 无论用户在哪个位置输入它。它原先与 `type:` 共用优先级，稳定排序让开销
+/// 取决于打字顺序：`content:x type:email` 会读遍全盘，`type:email content:x`
+/// 只读邮件。这个测试固定住「与顺序无关」，是官方若也修了同一处的判定器。
+#[test]
+fn content_filter_runs_after_the_cheap_ones() {
+    let written_first = parse_ok("content:factura type:email");
+    let parts = as_and(&written_first);
+    filter_is_kind(&parts[0], &FilterKind::Type);
+    filter_is_kind(&parts[1], &FilterKind::Content);
+
+    let written_last = parse_ok("type:email content:factura");
+    let parts = as_and(&written_last);
+    filter_is_kind(&parts[0], &FilterKind::Type);
+    filter_is_kind(&parts[1], &FilterKind::Content);
+
+    // 连原先的尾部 tag: 也要排在它前面。
+    let with_tag = parse_ok("content:factura tag:Trabajo informe");
+    let parts = as_and(&with_tag);
+    word_is(&parts[0], "informe");
+    filter_is_kind(&parts[1], &FilterKind::Tag);
+    filter_is_kind(&parts[2], &FilterKind::Content);
+}

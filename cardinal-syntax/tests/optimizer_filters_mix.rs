@@ -227,8 +227,10 @@ fn tag_filter_with_all_filter_types() {
         .count();
     assert_eq!(tag_count, 1);
 
-    // Tag filter should be the final element
-    let tail_start = parts.len() - tag_count;
+    // [port:franciscoxc/ec682553] `content:` 现在才是最后一个元素：它要读文件，
+    // 排在只读元数据的 `tag:` 后面。tag 块紧贴它之前。
+    filter_is_kind(&parts[parts.len() - 1], &FilterKind::Content);
+    let tail_start = parts.len() - 1 - tag_count;
     filter_is_kind(&parts[tail_start], &FilterKind::Tag);
 
     // Everything before the tail must not be a tag filter
@@ -535,8 +537,9 @@ fn all_filter_types_comprehensive() {
     word_is(&parts[3], "word1");
     word_is(&parts[4], "word2");
 
-    // Tags should be the final three elements
-    let tail_start = parts.len() - 3;
+    // [port:franciscoxc/ec682553] `content:` 现在最后，三个 tag 紧靠在它前面。
+    filter_is_kind(&parts[parts.len() - 1], &FilterKind::Content);
+    let tail_start = parts.len() - 4;
     filter_is_kind(&parts[tail_start], &FilterKind::Tag);
     filter_is_kind(&parts[tail_start + 1], &FilterKind::Tag);
     filter_is_kind(&parts[tail_start + 2], &FilterKind::Tag);

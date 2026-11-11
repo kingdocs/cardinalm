@@ -15,9 +15,56 @@ use query_segmentation::query_segmentation;
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use regex::RegexBuilder;
 use search_cancel::CancellationToken;
-use std::{collections::BTreeSet, fs::File, io::Read, path::Path};
+use std::{
+    collections::BTreeSet,
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 pub(crate) const CONTENT_BUFFER_BYTES: usize = 64 * 1024;
+
+// [port:franciscoxc/8bc9bae5 + 6cf78bdb] 内容搜索打开文件前的守卫。
+// 上游派生版为此引入了 `content_snippet` / `SKIPPED_CLOUD` 等新基础设施，
+// 我们停在 v0.1.23 原始结构，只搬判断逻辑本身，不引入跳过文件的统计功能。
+
+/// SF_DATALESS，来自 <sys/stat.h>：占位文件的内容在云端。
+const SF_DATALESS: u32 = 0x4000_0000;
+
+/// 单独抽出来的纯函数，好在没有云同步守护进程的机器上也能测。
+/// macOS 上普通文件无法用 `chflags dataless` 造出真正的云占位文件
+/// （只有 cloud daemon 能设这个标志），端到端测试在这类机器上只能跳过，
+/// 所以标志位判定必须能独立验证。
+pub(crate) fn is_dataless_flags(flags: u32) -> bool {
+    flags & SF_DATALESS != 0
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum UnreadReason {
+    /// iCloud（或其他云同步）占位文件：没有本地副本，打开会触发后台下载。
+    InTheCloud,
+    /// /dev 下的条目，或已不再是常规文件的东西（设备、FIFO、socket）。
+    /// 读 FIFO/socket 会阻塞且不可中断，一个就足以让整个搜索循环卡死。
+    NotAFile,
+}
+
+/// 判断一个路径是否不该被内容搜索打开。用 `symlink_metadata`（lstat）读标志，
+/// **不打开文件** —— 打开文件本身正是触发 iCloud 下载的动作。
+/// 返回 None 表示可以继续打开；`symlink_metadata` 失败也返回 None，
+/// 交给后面的 `File::open` 自然失败，与原实现语义一致。
+pub(crate) fn content_unread_reason(path: &Path) -> Option<UnreadReason> {
+    use std::os::macos::fs::MetadataExt;
+
+    // Path::starts_with 按组件匹配，不会误伤 /devices 之类。
+    if path.starts_with("/dev") {
+        return Some(UnreadReason::NotAFile);
+    }
+    let meta = std::fs::symlink_metadata(path).ok()?;
+    if !meta.file_type().is_file() {
+        return Some(UnreadReason::NotAFile);
+    }
+    is_dataless_flags(meta.st_flags()).then_some(UnreadReason::InTheCloud)
+}
 
 /// Threshold for switching from iterating file metadata to using Spotlight (mdfind).
 /// When the base set exceeds this size, Spotlight's indexed search is faster than
@@ -803,10 +850,9 @@ impl SearchCache {
             return Ok(None);
         };
 
-        let matched_indices = nodes
-            .into_iter()
-            .filter(|index| self.file_nodes[*index].file_type_hint() == NodeFileType::File)
-            .filter_map(|index| self.node_path(index).map(|path| (index, path)))
+        // [port:franciscoxc/fe8e88e2] 派发侧也要能随时放手，见 content_candidates。
+        let matched_indices = self
+            .content_candidates(nodes, token)
             .par_bridge()
             .filter_map(|(index, path)| {
                 self.node_content_matches(&path, needle, options.case_insensitive, token)?
@@ -815,6 +861,24 @@ impl SearchCache {
             .collect();
 
         Ok(token.is_cancelled().map(|()| matched_indices))
+    }
+
+    /// 把候选节点连同路径交给线程池，条件是这次搜索还在被需要。
+    ///
+    /// [port:franciscoxc/fe8e88e2] 原先只有「读每个文件」那侧检查取消，
+    /// 派发侧不检查，于是被新搜索取代的旧搜索仍会为剩下的每个节点构建路径、
+    /// 一个个喂给线程池。实测 628 万节点索引上要 10.3 秒才能开始下一次搜索，
+    /// 加这一行后约 50 ms。代价是每个节点一次原子读。
+    pub(crate) fn content_candidates(
+        &self,
+        nodes: Vec<SlabIndex>,
+        token: CancellationToken,
+    ) -> impl Iterator<Item = (SlabIndex, PathBuf)> + '_ {
+        nodes
+            .into_iter()
+            .take_while(move |_| token.is_cancelled().is_some())
+            .filter(|index| self.file_nodes[*index].file_type_hint() == NodeFileType::File)
+            .filter_map(|index| self.node_path(index).map(|path| (index, path)))
     }
 
     fn evaluate_tag_filter(
@@ -904,6 +968,13 @@ impl SearchCache {
         token: CancellationToken,
     ) -> Option<bool> {
         token.is_cancelled()?;
+
+        // [port:franciscoxc/8bc9bae5 + 6cf78bdb] 打开前先拦一道：
+        // 未下载的 iCloud 占位文件不读（否则一次搜索会把整个云盘拖下来），
+        // /dev 条目和不再是常规文件的条目不读（否则 FIFO/socket 会让搜索永久卡住）。
+        if content_unread_reason(path).is_some() {
+            return Some(false);
+        }
 
         let Ok(mut file) = File::open(path) else {
             return Some(false);

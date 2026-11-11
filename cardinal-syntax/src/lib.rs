@@ -128,7 +128,8 @@ fn optimize_or(parts: Vec<Expr>) -> Expr {
 /// - 0: Scope filters (`infolder:`, `parent:`) - narrow search space first
 /// - 1: Non-filter terms (words, phrases, boolean ops) - cheap string matching
 /// - 2: Generic filters (`ext:`, `type:`, `size:`, etc.) - moderate cost
-/// - 3: Tag filters (`tag:`) - expensive metadata access, runs last
+/// - 3: Tag filters (`tag:`) - expensive metadata access
+/// - 4: Content filters (`content:`) - opens and reads every remaining candidate, runs last
 fn reorder_by_priority(parts: &mut Vec<Expr>) {
     if parts.len() <= 1 {
         return;
@@ -139,6 +140,12 @@ fn reorder_by_priority(parts: &mut Vec<Expr>) {
             Expr::Term(Term::Filter(filter)) => match filter.kind {
                 FilterKind::InFolder | FilterKind::Parent => 0,
                 FilterKind::Tag => 3,
+                // [port:franciscoxc/ec682553] 必须最后，且要拉开明显差距：其他过滤器
+                // 只查内存索引，content: 要把剩下的每个候选都打开读一遍。原先它和
+                // type: 共用优先级 2，稳定排序就让「用户打字的顺序」决定了开销 ——
+                // `content:x type:email` 会读遍全盘，`type:email content:x` 只读邮件。
+                // 6100 个文件的树上实测差 60 倍，索引越大差距越大。
+                FilterKind::Content => 4,
                 _ => 2,
             },
             _ => 1,
