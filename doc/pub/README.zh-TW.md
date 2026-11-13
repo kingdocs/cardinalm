@@ -1,5 +1,5 @@
 > [!NOTE]
-> **這是 [cardisoft/cardinal](https://github.com/cardisoft/cardinal) 的個人衍生版（CardinalM）。**
+> **Searchflux 是 [cardisoft/cardinal](https://github.com/cardisoft/cardinal) 的個人衍生版（基於上游 v0.1.23 二次開發）。**
 > 以下為上游原文。本衍生版在上游 master 基礎上增加了：
 >
 > - **依名稱忽略規則**——「偏好設定」中新增「忽略規則」多行輸入框（位於「忽略路徑」下方），每行一條 .gitignore 風格規則：`*.log`、`.DS_Store`、`~$*` 用於檔案；規則以 `/` 結尾表示只匹配目錄，例如 `.*/` 剪掉所有點開頭的目錄，`node_modules/` 剪掉任意層級的依賴目錄。命中的檔案或目錄子樹不會進入「檔名索引」與「內容索引」，而不只是從搜尋結果中隱藏。檔案規則絕不匹配目錄，目錄規則也絕不匹配檔案；匹配不分大小寫（ASCII）。
@@ -10,7 +10,7 @@
 >
 > 發佈版使用本機自簽程式碼簽署憑證簽署（見 `scripts/sign-self-signed.sh`），重編譯不會再讓「完全磁碟存取」授權失效；但不是 Apple Developer ID，首次啟動仍需右鍵「開啟」。
 >
-> **下載編譯好的版本（Apple Silicon）**：[Releases 頁面](https://github.com/kingdocs/cardinalm/releases)
+> **下載編譯好的版本（Apple Silicon）**：[Releases 頁面](https://github.com/kingdocs/searchflux/releases)
 
 <div align="center">
   <img src="../../cardinal/mac-icon_1024x1024.png" alt="Cardinal icon" width="120" height="120">

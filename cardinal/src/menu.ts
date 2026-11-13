@@ -5,7 +5,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import i18n from './i18n/config';
 import { openPreferences } from './utils/openPreferences';
 
-const HELP_UPDATES_URL = 'https://github.com/cardisoft/cardinal/releases';
+const HELP_UPDATES_URL = 'https://github.com/kingdocs/searchflux/releases';
 
 let menuInitPromise: Promise<void> | null = null;
 
@@ -18,7 +18,7 @@ export function initializeAppMenu(): Promise<void> {
 }
 
 async function buildAppMenu(): Promise<void> {
-  const name = (await getName().catch(() => null)) ?? 'Cardinal';
+  const name = (await getName().catch(() => null)) ?? 'Searchflux';
   const aboutItem = await PredefinedMenuItem.new({
     item: { About: null },
     text: i18n.t('menu.about', { appName: name }),

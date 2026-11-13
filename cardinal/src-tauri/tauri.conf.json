@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CardinalM",
+  "productName": "Searchflux",
   "version": "0.1.23",
   "identifier": "io.github.micheas.cardinalm",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CardinalM",
+        "title": "Searchflux",
         "width": 1200,
         "height": 800
       }

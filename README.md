@@ -1,5 +1,5 @@
 > [!NOTE]
-> **This is a personal fork of [cardisoft/cardinal](https://github.com/cardisoft/cardinal).**
+> **Searchflux is a personal fork of [cardisoft/cardinal](https://github.com/cardisoft/cardinal), based on upstream v0.1.23.**
 > Everything below is upstream documentation. This fork adds on top of upstream master:
 >
 > - **Name-based ignore rules** — a new multi-line field in Preferences (below "Ignore paths") accepting gitignore-style patterns, one per line: `*.log`, `.DS_Store`, `~$*` for files; a trailing `/` restricts a rule to directories, so `.*/` prunes all dot-directories and `node_modules/` prunes dependency folders anywhere in the tree. Matching files (or directory subtrees) never enter the name or content index, not just the visible results. File rules never match directories, and directory rules never match files. Matching is ASCII case-insensitive.
@@ -10,7 +10,7 @@
 >
 > Releases are signed with a machine-local self-signed code-signing certificate (`scripts/sign-self-signed.sh`), so rebuilding no longer invalidates the macOS Full Disk Access grant. It is not an Apple Developer ID: Gatekeeper still requires right-click > Open on first launch.
 >
-> **Prebuilt Apple Silicon builds**: [Releases](https://github.com/kingdocs/cardinalm/releases)
+> **Prebuilt Apple Silicon builds**: [Releases](https://github.com/kingdocs/searchflux/releases)
 
 <div align="center">
   <img src="cardinal/mac-icon_1024x1024.png" alt="Cardinal icon" width="120" height="120">

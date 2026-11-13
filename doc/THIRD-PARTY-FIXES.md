@@ -8,7 +8,7 @@
 | Role | Repository | Relationship |
 | --- | --- | --- |
 | **Only base** | `upstream` = cardisoft/cardinal | rebase onto it; read-only, never push |
-| **Our layer** | `origin` = kingdocs/cardinalm | own features + ported fixes, all our own commits |
+| **Our layer** | `origin` = kingdocs/searchflux | own features + ported fixes, all our own commits |
 | **One-time donor** | `franciscoxc/cardinal` | **no remote, no tracking branch, no merge** |
 
 `franciscoxc/cardinal` is another personal fork (based on upstream v0.1.23,

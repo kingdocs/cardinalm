@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sign CardinalM.app with a local self-signed code-signing identity.
+# Sign Searchflux.app with a local self-signed code-signing identity.
 #
 # Why not ad-hoc (`codesign -s -`):
 #   An ad-hoc signed app has this designated requirement:
@@ -19,7 +19,7 @@
 #
 # Usage:
 #   scripts/sign-self-signed.sh --create-identity   # once per machine
-#   scripts/sign-self-signed.sh [path/to/CardinalM.app]
+#   scripts/sign-self-signed.sh [path/to/Searchflux.app]
 set -euo pipefail
 
 IDENTITY="CardinalM Self-Signed"
@@ -82,7 +82,7 @@ if ! security find-identity -p codesigning | grep -qF "$IDENTITY"; then
   exit 1
 fi
 
-APP="${1:-/Applications/CardinalM.app}"
+APP="${1:-/Applications/Searchflux.app}"
 if [[ ! -d "$APP" ]]; then
   echo "App bundle not found: $APP" >&2
   exit 1
