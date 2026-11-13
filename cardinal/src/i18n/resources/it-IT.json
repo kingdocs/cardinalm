@@ -71,7 +71,7 @@
       "settings": "Apri preferenze"
     },
     "rescan": {
-      "disabledHint": "La nuova scansione sarà disponibile quando Cardinal è pronto.",
+      "disabledHint": "La nuova scansione sarà disponibile quando Searchflux è pronto.",
       "enabledHint": "Avvia una scansione completa del file system.",
       "errorCountSuffix": " Si sono verificati {{formatted}} errori del file system, è consigliata una nuova scansione."
     },
@@ -86,11 +86,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "È necessario l'accesso completo al disco",
-      "description": "Cardinal necessita dell'accesso completo al disco di macOS per indicizzare e monitorare i file in tutto il sistema. Abilita l'accesso per Cardinal in Impostazioni di sistema.",
+      "description": "Searchflux necessita dell'accesso completo al disco di macOS per indicizzare e monitorare i file in tutto il sistema. Abilita l'accesso per Searchflux in Impostazioni di sistema.",
       "steps": {
         "one": "Apri Impostazioni di sistema > Privacy e sicurezza > Accesso completo al disco.",
-        "two": "Fai clic sul lucchetto per consentire modifiche e abilita Cardinal.",
-        "three": "Quando richiesto, consenti a macOS di riavviare Cardinal."
+        "two": "Fai clic sul lucchetto per consentire modifiche e abilita Searchflux.",
+        "three": "Quando richiesto, consenti a macOS di riavviare Searchflux."
       },
       "status": {
         "checking": "Verifica dello stato delle autorizzazioni...",
@@ -122,7 +122,7 @@
   },
   "preferences": {
     "title": "Preferenze",
-    "heading": "Personalizza Cardinal",
+    "heading": "Personalizza Searchflux",
     "subtitle": "Regola aspetto e lingua come preferisci.",
     "appearance": "Aspetto",
     "themeHint": "Scegli chiaro, scuro o segui il sistema.",
@@ -152,8 +152,8 @@
     }
   },
   "tray": {
-    "open": "Apri Cardinal",
-    "quit": "Esci da Cardinal"
+    "open": "Apri Searchflux",
+    "quit": "Esci da Searchflux"
   },
   "watchRoot": {
     "label": "Percorso radice di monitoraggio",
@@ -163,7 +163,7 @@
       "absolute": "Inserisci un percorso assoluto che inizi con '/' o '~'."
     },
     "title": "Scegli il percorso radice di monitoraggio",
-    "description": "Cardinal indicizzerà e monitorerà i file in questa directory. Potrai cambiarlo più tardi nelle Preferenze.",
+    "description": "Searchflux indicizzerà e monitorerà i file in questa directory. Potrai cambiarlo più tardi nelle Preferenze.",
     "action": "Avvia indicizzazione"
   },
   "ignorePaths": {

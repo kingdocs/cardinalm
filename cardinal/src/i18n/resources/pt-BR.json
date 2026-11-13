@@ -71,7 +71,7 @@
       "settings": "Abrir preferências"
     },
     "rescan": {
-      "disabledHint": "A varredura fica disponível quando o Cardinal estiver pronto.",
+      "disabledHint": "A varredura fica disponível quando o Searchflux estiver pronto.",
       "enabledHint": "Iniciar uma varredura completa do sistema de arquivos.",
       "errorCountSuffix": " Ocorreram {{formatted}} erros do sistema de arquivos, uma nova varredura é sugerida."
     },
@@ -86,11 +86,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "É necessário Acesso Total ao Disco",
-      "description": "O Cardinal precisa do Acesso Total ao Disco do macOS para indexar e monitorar arquivos em todo o sistema. Ative o acesso para o Cardinal nos Ajustes do Sistema.",
+      "description": "O Searchflux precisa do Acesso Total ao Disco do macOS para indexar e monitorar arquivos em todo o sistema. Ative o acesso para o Searchflux nos Ajustes do Sistema.",
       "steps": {
         "one": "Abra Ajustes do Sistema > Privacidade e Segurança > Acesso Total ao Disco.",
-        "two": "Clique no cadeado para permitir alterações e habilite o Cardinal.",
-        "three": "Quando solicitado, permita que o macOS reinicie o Cardinal."
+        "two": "Clique no cadeado para permitir alterações e habilite o Searchflux.",
+        "three": "Quando solicitado, permita que o macOS reinicie o Searchflux."
       },
       "status": {
         "checking": "Verificando status da permissão...",
@@ -122,7 +122,7 @@
   },
   "preferences": {
     "title": "Preferências",
-    "heading": "Deixe o Cardinal com a sua cara",
+    "heading": "Deixe o Searchflux com a sua cara",
     "subtitle": "Ajuste aparência e idioma como preferir.",
     "appearance": "Aparência",
     "themeHint": "Escolha claro, escuro ou seguir o sistema.",
@@ -152,8 +152,8 @@
     }
   },
   "tray": {
-    "open": "Abrir Cardinal",
-    "quit": "Sair do Cardinal"
+    "open": "Abrir Searchflux",
+    "quit": "Sair do Searchflux"
   },
   "watchRoot": {
     "label": "Caminho raiz de monitoramento",
@@ -163,7 +163,7 @@
       "absolute": "Informe um caminho absoluto que comece com '/' ou '~'."
     },
     "title": "Escolher caminho raiz de monitoramento",
-    "description": "O Cardinal vai indexar e monitorar os arquivos neste diretório. Você pode alterar isso depois em Preferências.",
+    "description": "O Searchflux vai indexar e monitorar os arquivos neste diretório. Você pode alterar isso depois em Preferências.",
     "action": "Iniciar indexação"
   },
   "ignorePaths": {

@@ -71,7 +71,7 @@
       "settings": "Einstellungen öffnen"
     },
     "rescan": {
-      "disabledHint": "Der erneute Scan ist verfügbar, sobald Cardinal bereit ist.",
+      "disabledHint": "Der erneute Scan ist verfügbar, sobald Searchflux bereit ist.",
       "enabledHint": "Einen vollständigen Scan des Dateisystems starten.",
       "errorCountSuffix": " Es sind {{formatted}} Dateisystemfehler aufgetreten, ein erneuter Scan wird empfohlen."
     },
@@ -86,11 +86,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "Voller Festplattenzugriff erforderlich",
-      "description": "Cardinal benötigt den vollen Festplattenzugriff von macOS, um Dateien auf deinem System zu indexieren und zu überwachen. Aktiviere den vollen Festplattenzugriff für Cardinal in den Systemeinstellungen.",
+      "description": "Searchflux benötigt den vollen Festplattenzugriff von macOS, um Dateien auf deinem System zu indexieren und zu überwachen. Aktiviere den vollen Festplattenzugriff für Searchflux in den Systemeinstellungen.",
       "steps": {
         "one": "Öffne Systemeinstellungen > Datenschutz & Sicherheit > Voller Festplattenzugriff.",
-        "two": "Klicke auf das Schloss, erlaube Änderungen und aktiviere Cardinal.",
-        "three": "Erlaube macOS, Cardinal bei Aufforderung neu zu starten."
+        "two": "Klicke auf das Schloss, erlaube Änderungen und aktiviere Searchflux.",
+        "three": "Erlaube macOS, Searchflux bei Aufforderung neu zu starten."
       },
       "status": {
         "checking": "Berechtigungsstatus wird überprüft...",
@@ -122,7 +122,7 @@
   },
   "preferences": {
     "title": "Einstellungen",
-    "heading": "Passe Cardinal an",
+    "heading": "Passe Searchflux an",
     "subtitle": "Stelle Erscheinungsbild und Sprache ein.",
     "appearance": "Darstellung",
     "themeHint": "Wähle Hell, Dunkel oder Systemstandard.",
@@ -152,8 +152,8 @@
     }
   },
   "tray": {
-    "open": "Cardinal öffnen",
-    "quit": "Cardinal beenden"
+    "open": "Searchflux öffnen",
+    "quit": "Searchflux beenden"
   },
   "watchRoot": {
     "label": "Überwachungs-Stammverzeichnis",
@@ -163,7 +163,7 @@
       "absolute": "Bitte einen absoluten Pfad angeben, der mit '/' oder '~' beginnt."
     },
     "title": "Überwachungs-Stammverzeichnis wählen",
-    "description": "Cardinal indiziert und überwacht Dateien in diesem Verzeichnis. Sie können es später in den Einstellungen ändern.",
+    "description": "Searchflux indiziert und überwacht Dateien in diesem Verzeichnis. Sie können es später in den Einstellungen ändern.",
     "action": "Indexierung starten"
   },
   "ignorePaths": {

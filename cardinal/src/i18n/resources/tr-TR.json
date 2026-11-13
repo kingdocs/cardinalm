@@ -71,7 +71,7 @@
       "settings": "Tercihleri aç"
     },
     "rescan": {
-      "disabledHint": "Cardinal hazır olduğunda yeniden tarama kullanılabilir.",
+      "disabledHint": "Searchflux hazır olduğunda yeniden tarama kullanılabilir.",
       "enabledHint": "Dosya sistemini tamamen tara.",
       "errorCountSuffix": " Şu ana kadar {{formatted}} dosya sistemi hatası oluştu, yeniden tarama önerilir."
     },
@@ -86,11 +86,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "Tam Disk Erişimi gerekli",
-      "description": "Cardinal'in sistem genelindeki dosyaları dizine ekleyip izlemesi için macOS Tam Disk Erişimi gerekir. Lütfen Sistem Ayarları'nda Cardinal'e izin verin.",
+      "description": "Searchflux'in sistem genelindeki dosyaları dizine ekleyip izlemesi için macOS Tam Disk Erişimi gerekir. Lütfen Sistem Ayarları'nda Searchflux'e izin verin.",
       "steps": {
         "one": "Sistem Ayarları > Gizlilik ve Güvenlik > Tam Disk Erişimi'ni açın.",
-        "two": "Kilidi açıp değişikliklere izin verin ve Cardinal'i etkinleştirin.",
-        "three": "İstendiğinde macOS'un Cardinal'i yeniden başlatmasına izin verin."
+        "two": "Kilidi açıp değişikliklere izin verin ve Searchflux'i etkinleştirin.",
+        "three": "İstendiğinde macOS'un Searchflux'i yeniden başlatmasına izin verin."
       },
       "status": {
         "checking": "İzin durumu kontrol ediliyor...",
@@ -122,7 +122,7 @@
   },
   "preferences": {
     "title": "Tercihler",
-    "heading": "Cardinal'i kişiselleştir",
+    "heading": "Searchflux'i kişiselleştir",
     "subtitle": "Görünüm ve dili istediğiniz gibi ayarlayın.",
     "appearance": "Görünüm",
     "themeHint": "Açık, koyu veya sistem varsayılanını seç.",
@@ -152,8 +152,8 @@
     }
   },
   "tray": {
-    "open": "Cardinal'i Aç",
-    "quit": "Cardinal'den çık"
+    "open": "Searchflux'i Aç",
+    "quit": "Searchflux'den çık"
   },
   "watchRoot": {
     "label": "İzleme kök yolu",
@@ -163,7 +163,7 @@
       "absolute": "Lütfen '/' veya '~' ile başlayan mutlak bir yol girin."
     },
     "title": "İzleme kök yolunu seçin",
-    "description": "Cardinal bu dizin altındaki dosyaları indeksler ve izler. Bunu daha sonra Tercihler'den değiştirebilirsiniz.",
+    "description": "Searchflux bu dizin altındaki dosyaları indeksler ve izler. Bunu daha sonra Tercihler'den değiştirebilirsiniz.",
     "action": "Dizinlemeyi başlat"
   },
   "ignorePaths": {

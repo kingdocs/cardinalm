@@ -71,7 +71,7 @@
       "settings": "打開偏好設定"
     },
     "rescan": {
-      "disabledHint": "Cardinal 就緒後即可重新掃描。",
+      "disabledHint": "Searchflux 就緒後即可重新掃描。",
       "enabledHint": "觸發一次完整的檔案系統重新掃描。",
       "errorCountSuffix": " 已出現{{formatted}}次檔案系統錯誤，建議重新掃描。"
     },
@@ -85,11 +85,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "需要完整磁碟存取權",
-      "description": "Cardinal 需要 macOS 的「完整磁碟存取」權限才能索引並監控系統中的檔案。請在系統設定中為 Cardinal 啟用完整磁碟存取。",
+      "description": "Searchflux 需要 macOS 的「完整磁碟存取」權限才能索引並監控系統中的檔案。請在系統設定中為 Searchflux 啟用完整磁碟存取。",
       "steps": {
         "one": "打開 系統設定 > 隱私權與安全性 > 完整磁碟存取。",
-        "two": "點擊鎖頭圖示以允許變更，並啟用 Cardinal。",
-        "three": "依提示允許 macOS 重新啟動 Cardinal。"
+        "two": "點擊鎖頭圖示以允許變更，並啟用 Searchflux。",
+        "three": "依提示允許 macOS 重新啟動 Searchflux。"
       },
       "status": {
         "checking": "正在檢查權限狀態…",
@@ -121,7 +121,7 @@
   },
   "preferences": {
     "title": "偏好設定",
-    "heading": "自訂 Cardinal",
+    "heading": "自訂 Searchflux",
     "subtitle": "隨心調整外觀與語言。",
     "appearance": "外觀",
     "themeHint": "選擇淺色、深色或跟隨系統。",
@@ -151,8 +151,8 @@
     }
   },
   "tray": {
-    "open": "打開 Cardinal",
-    "quit": "結束 Cardinal"
+    "open": "打開 Searchflux",
+    "quit": "結束 Searchflux"
   },
   "watchRoot": {
     "label": "監控根路徑",
@@ -162,7 +162,7 @@
       "absolute": "請輸入以「/」或「~」開頭的絕對路徑。"
     },
     "title": "選擇監控根路徑",
-    "description": "Cardinal 只會索引並監控該目錄下的檔案。你之後可以在偏好設定中更改。",
+    "description": "Searchflux 只會索引並監控該目錄下的檔案。你之後可以在偏好設定中更改。",
     "action": "開始初始化"
   },
   "ignorePaths": {

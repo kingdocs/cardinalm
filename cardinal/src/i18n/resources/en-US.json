@@ -71,7 +71,7 @@
       "settings": "Open preferences"
     },
     "rescan": {
-      "disabledHint": "Rescan becomes available once CardinalM is ready.",
+      "disabledHint": "Rescan becomes available once Searchflux is ready.",
       "enabledHint": "Trigger a full filesystem rescan.",
       "errorCountSuffix": " {{formatted}} filesystem errors have occurred, rescan is suggested."
     },
@@ -86,11 +86,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "Full Disk Access Required",
-      "description": "CardinalM needs macOS Full Disk Access to index and monitor files across your system. Please enable Full Disk Access for CardinalM in System Settings.",
+      "description": "Searchflux needs macOS Full Disk Access to index and monitor files across your system. Please enable Full Disk Access for Searchflux in System Settings.",
       "steps": {
         "one": "Open System Settings > Privacy & Security > Full Disk Access.",
-        "two": "Click the lock to make changes and enable CardinalM.",
-        "three": "When prompted, allow macOS to restart CardinalM."
+        "two": "Click the lock to make changes and enable Searchflux.",
+        "three": "When prompted, allow macOS to restart Searchflux."
       },
       "status": {
         "checking": "Checking permission status...",
@@ -122,7 +122,7 @@
   },
   "preferences": {
     "title": "Preferences",
-    "heading": "Make CardinalM yours",
+    "heading": "Make Searchflux yours",
     "subtitle": "Adjust appearance and language to your liking.",
     "appearance": "Appearance",
     "themeHint": "Choose light, dark, or follow the system.",
@@ -152,8 +152,8 @@
     }
   },
   "tray": {
-    "open": "Open CardinalM",
-    "quit": "Quit CardinalM"
+    "open": "Open Searchflux",
+    "quit": "Quit Searchflux"
   },
   "watchRoot": {
     "label": "Monitor root path",
@@ -163,7 +163,7 @@
       "absolute": "Please enter an absolute path starting with '/' or '~'."
     },
     "title": "Choose monitor root path",
-    "description": "CardinalM will index and monitor files under this directory. You can change it later in Preferences.",
+    "description": "Searchflux will index and monitor files under this directory. You can change it later in Preferences.",
     "action": "Start indexing"
   },
   "ignorePaths": {

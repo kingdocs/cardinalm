@@ -5,9 +5,9 @@
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.23.3</string>
+    <string>0.1.23.4</string>
     <key>CFBundleVersion</key>
-    <string>20261113.3</string>
+    <string>20261113.4</string>
     <key>NSHumanReadableCopyright</key>
     <string>forked from cardinal v0.1.23 @Micheas</string>
 </dict>

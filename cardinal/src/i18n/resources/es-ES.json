@@ -71,7 +71,7 @@
       "settings": "Abrir preferencias"
     },
     "rescan": {
-      "disabledHint": "El reescaneo estará disponible cuando Cardinal esté listo.",
+      "disabledHint": "El reescaneo estará disponible cuando Searchflux esté listo.",
       "enabledHint": "Iniciar un reescaneo completo del sistema de archivos.",
       "errorCountSuffix": " Se han producido {{formatted}} errores del sistema de archivos, se sugiere volver a escanear."
     },
@@ -86,11 +86,11 @@
   "app": {
     "fullDiskAccess": {
       "title": "Se requiere acceso completo al disco",
-      "description": "Cardinal necesita acceso completo al disco de macOS para indexar y monitorizar archivos en tu sistema. Activa el acceso completo al disco para Cardinal en Ajustes del sistema.",
+      "description": "Searchflux necesita acceso completo al disco de macOS para indexar y monitorizar archivos en tu sistema. Activa el acceso completo al disco para Searchflux en Ajustes del sistema.",
       "steps": {
         "one": "Abre Ajustes del sistema > Privacidad y seguridad > Acceso completo al disco.",
-        "two": "Haz clic en el candado para permitir cambios y habilita Cardinal.",
-        "three": "Cuando se te pida, permite que macOS reinicie Cardinal."
+        "two": "Haz clic en el candado para permitir cambios y habilita Searchflux.",
+        "three": "Cuando se te pida, permite que macOS reinicie Searchflux."
       },
       "status": {
         "checking": "Comprobando el estado de los permisos...",
@@ -122,7 +122,7 @@
   },
   "preferences": {
     "title": "Preferencias",
-    "heading": "Haz que Cardinal sea tuyo",
+    "heading": "Haz que Searchflux sea tuyo",
     "subtitle": "Ajusta la apariencia y el idioma.",
     "appearance": "Apariencia",
     "themeHint": "Elige claro, oscuro o según el sistema.",
@@ -152,8 +152,8 @@
     }
   },
   "tray": {
-    "open": "Abrir Cardinal",
-    "quit": "Salir de Cardinal"
+    "open": "Abrir Searchflux",
+    "quit": "Salir de Searchflux"
   },
   "watchRoot": {
     "label": "Ruta raíz de supervisión",
@@ -163,7 +163,7 @@
       "absolute": "Introduce una ruta absoluta que empiece por '/' o '~'."
     },
     "title": "Elegir ruta raíz de supervisión",
-    "description": "Cardinal indexará y supervisará los archivos bajo este directorio. Puedes cambiarlo más tarde en Preferencias.",
+    "description": "Searchflux indexará y supervisará los archivos bajo este directorio. Puedes cambiarlo más tarde en Preferencias.",
     "action": "Iniciar indexación"
   },
   "ignorePaths": {
